@@ -17,6 +17,7 @@ const Login = () => {
             dispatch({ type: "LOGIN_SUCCESS", payload: res.data });
             navigate("/dashboard");
         } catch (err) {
+            console.error("DEBUG: Login Error:", err);
             dispatch({ type: "LOGIN_FAILURE", payload: err.response?.data || "Login failed" });
         }
     };

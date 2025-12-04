@@ -26,6 +26,7 @@ const Signup = () => {
             await api.post("/api/auth/register", formData);
             navigate("/login");
         } catch (err) {
+            console.error("DEBUG: Signup Error:", err);
             setError(err.response?.data || "Registration failed");
         }
     };
