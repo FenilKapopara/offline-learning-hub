@@ -7,6 +7,9 @@ const api = axios.create({
     },
 });
 
+console.log("DEBUG: VITE_API_URL is:", import.meta.env.VITE_API_URL);
+console.log("DEBUG: Axios baseURL is:", api.defaults.baseURL);
+
 // Add a request interceptor to include the token if it exists
 api.interceptors.request.use(
     (config) => {

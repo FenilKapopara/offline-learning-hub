@@ -21,6 +21,7 @@ const Signup = () => {
 
     const handleSignup = async (e) => {
         e.preventDefault();
+        console.log("DEBUG: Attempting signup with data:", formData);
         try {
             await api.post("/api/auth/register", formData);
             navigate("/login");
