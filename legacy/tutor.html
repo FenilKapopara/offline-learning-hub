@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Offline Learning Hub</title>
+  <!-- Tailwind (no build step) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.06); }
+    .modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); align-items:center; justify-content:center; z-index:50; }
+    .modal.open{ display:flex; }
+    /* Right-side drawer for Tutor panel */
+    .drawer {
+      position: fixed; top: 0; right: 0; height: 100vh; width: 380px;
+      background: #fff; border-left: 1px solid rgb(226 232 240);
+      transform: translateX(100%); transition: transform .25s ease;
+      z-index: 60; display: flex; flex-direction: column;
+      box-shadow: 0 8px 30px rgba(0,0,0,.08);
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer-header { padding: 14px 16px; border-bottom: 1px solid rgb(226 232 240); display:flex; align-items:center; gap:10px; }
+    .drawer-body { padding: 16px; overflow:auto; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <!-- Top bar -->
+  <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="font-extrabold">📚 Team Global Seed</div>
+      <span id="net-badge" class="ml-auto text-xs px-2 py-1 rounded border bg-green-50 text-green-700">Connected</span>
+      <!-- NEW: Tutor button -->
+      <button id="tutorBtn" class="text-sm px-3 py-1 rounded border bg-slate-100 hover:bg-slate-200"><a link >Tutor</a></button>
+      <button id="settingsBtn" class="text-sm px-3 py-1 rounded border bg-slate-100 hover:bg-slate-200">Settings</button>
+    </div>
+  </header>
+
+  <!-- Hero + Filters -->
+  <section class="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-6 items-center">
+    <div>
+      <h1 class="text-3xl font-black tracking-tight">Learn anywhere on your local network</h1>
+      <p class="mt-2 text-slate-600">Browse courses, download bundles, and study in your language. Works even when the internet is down.</p>
+      <div class="mt-4 flex gap-2">
+        <a href="#catalog" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Browse Courses</a>
+        <button id="offlineBtn" class="px-4 py-2 rounded border">Use Offline</button>
+      </div>
+    </div>
+    <div class="bg-white shadow-soft rounded-xl border">
+      <div class="px-4 py-3 font-semibold">🔎 Quick Filters</div>
+      <div class="p-4 grid md:grid-cols-3 gap-3">
+        <input id="q" class="border rounded px-3 py-2" placeholder="Search courses" />
+        <select id="subject" class="border rounded px-3 py-2">
+          <option>All</option><option>Literacy</option><option>Math</option><option>Health</option><option>Life Skills</option>
+        </select>
+        <select id="level" class="border rounded px-3 py-2">
+          <option>All</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Catalog -->
+  <section id="catalog" class="max-w-6xl mx-auto px-4 pb-16">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-bold">Course Catalog</h2>
+      <div id="resultCount" class="text-xs px-2 py-1 rounded border bg-white"></div>
+    </div>
+    <div id="loading" class="text-sm text-slate-500 hidden">Loading from hub…</div>
+    <div id="cards" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </section>
+
+  <!-- ❌ REMOVED: old Tutor Uploader section that was inside the page body -->
+
+  <!-- Settings Modal (unchanged) -->
+  <div id="settingsModal" class="modal">
+    <div class="bg-white rounded-xl p-6 w-[90%] max-w-lg shadow-soft">
+      <div class="font-bold mb-4">⚙️ Preferences</div>
+      <div class="grid gap-3">
+        <label class="text-sm">Language
+          <select id="lang" class="border rounded px-3 py-2 w-full">
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+            <option value="sw">Swahili</option>
+            <option value="bn">Bengali</option>
+            <option value="ar">Arabic</option>
+          </select>
+        </label>
+        <label class="text-sm">Hub address
+          <input id="hubUrl" class="border rounded px-3 py-2 w-full" placeholder="http://hub.local" />
+        </label>
+        <div class="flex gap-2 justify-end">
+          <button id="savePrefs" class="px-4 py-2 rounded bg-blue-600 text-white">Save</button>
+          <button id="closePrefs" class="px-4 py-2 rounded border">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Modal (unchanged) -->
+  <div id="feedbackModal" class="modal">
+    <div class="bg-white rounded-xl p-6 w-[90%] max-w-lg shadow-soft">
+      <div id="fbTitle" class="font-bold mb-4">Leave feedback</div>
+      <div class="grid gap-3">
+        <label class="text-sm">Rating
+          <select id="rating" class="border rounded px-3 py-2 w-full">
+            <option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option>
+          </select>
+        </label>
+        <label class="text-sm">Comment
+          <textarea id="review" class="border rounded px-3 py-2 w-full" placeholder="What helped you? What could be clearer?"></textarea>
+        </label>
+        <div class="flex gap-2 justify-end">
+          <button id="submitReview" class="px-4 py-2 rounded bg-emerald-600 text-white">Submit</button>
+          <button id="cancelReview" class="px-4 py-2 rounded border">Cancel</button>
+        </div>
+        <div class="pt-3 border-t">
+          <div class="text-sm font-semibold mb-2">Recent feedback</div>
+          <div id="recent" class="grid gap-2 max-h-40 overflow-auto pr-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ NEW: Right-side Tutor Drawer (uses same IDs as before) -->
+  <aside id="tutorDrawer" class="drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <div class="font-bold">🧑‍🏫 Tutor Uploaded</div>
+      <button id="tutorClose" class="ml-auto text-sm px-2 py-1 rounded border">Close</button>
+    </div>
+    <div class="drawer-body">
+      <p class="text-sm text-slate-600 mb-4">Connected to the hub Wi-Fi? Upload a small file or voice note for your learners.</p>
+      <div class="grid gap-3">
+        <input id="fileInput" type="file" class="border rounded px-3 py-2 bg-slate-50" />
+        <div class="flex gap-2">
+          <button id="uploadBtn" class="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700">Upload</button>
+          <button id="howBtn" class="px-4 py-2 rounded border">How it works</button>
+        </div>
+      </div>
+      <!-- Optional: simple list to confirm uploads saved locally -->
+      <div class="mt-6">
+        <div class="text-sm font-semibold mb-2">Recent tutor uploads (device cache)</div>
+        <div id="tutorList" class="grid gap-2 text-sm text-slate-700"></div>
+      </div>
+    </div>
+  </aside>
+
+  <footer class="py-8 text-center text-xs text-slate-500">Offline Learning Hub • Works on local network</footer>
+
+  <!-- Your existing app.js should keep working (same IDs kept) -->
+  <script src="app.js"></script>
+
+  <!-- Tiny inline JS to open/close the Tutor drawer and show local uploads -->
+  <script>
+    (function() {
+      const drawer = document.getElementById('tutorDrawer');
+      const openBtn = document.getElementById('tutorBtn');
+      const closeBtn = document.getElementById('tutorClose');
+      const list = document.getElementById('tutorList');
+
+      function refreshList(){
+        try {
+          const items = JSON.parse(localStorage.getItem('tutor_uploads_local') || localStorage.getItem('uploads') || '[]');
+          if(!Array.isArray(items) || items.length===0){ list.innerHTML = '<div class="text-slate-500">No uploads yet.</div>'; return; }
+          list.innerHTML = items.slice().reverse().map(x => {
+            const name = x.name || x.meta?.title || 'file';
+            const size = x.size ? Math.round(x.size/1024)+' KB' : '-';
+            const ts = x.ts ? new Date(x.ts).toLocaleString() : '';
+            return '<div class="border rounded px-3 py-2 bg-white flex items-center justify-between"><span>'+name+'</span><span class="text-xs text-slate-500">'+size+' • '+ts+'</span></div>';
+          }).join('');
+        } catch(e){ list.innerHTML=''; }
+      }
+
+      openBtn.addEventListener('click', () => { drawer.classList.add('open'); refreshList(); });
+      closeBtn.addEventListener('click', () => drawer.classList.remove('open'));
+    })();
+  </script>
+</body>
+</html>
